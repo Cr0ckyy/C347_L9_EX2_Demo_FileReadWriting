@@ -59,17 +59,19 @@ public class MainActivity extends AppCompatActivity {
             try {
                 String folderLocation1 = Environment.getExternalStorageDirectory()
                         .getAbsolutePath() + "/Folder";
+                // A new File instance is created by combining a parent pathname string and a child pathname string.
                 File targetFile = new File(folderLocation1, "data.txt");
                 FileWriter writer = new FileWriter(targetFile, true);
                 /* true – for appending to  existing data
                  false – for overwriting  existing data */
 
-                writer.write("Hello world" + "\n");
-                writer.flush();
-                writer.close();
+
+                writer.write("Hello world" + "\n"); // Writes a string.
+                writer.flush(); // Flushes the stream.
+                writer.close();// Closes the stream by first flushing it.
             } catch (Exception e) {
                 Toast.makeText(MainActivity.this, "Failed to write!", Toast.LENGTH_LONG).show();
-                e.printStackTrace();
+                e.printStackTrace(); // This throwable and its backtrace are printed to the standard error stream.
             }
 
 
@@ -80,20 +82,26 @@ public class MainActivity extends AppCompatActivity {
                     .getAbsolutePath() + "/Folder";
             File targetFile = new File(folderLocation12, "data.txt");
 
+            // Tests whether the targetFile denoted by this abstract pathname exists.
             if (targetFile.exists()) {
+
                 StringBuilder data = new StringBuilder();
 
                 try {
+                    // Creates a new FileReader, given the File to read from.
                     FileReader reader = new FileReader(targetFile);
                     BufferedReader br = new BufferedReader(reader);
                     String line = br.readLine();
 
+                    // if line is not null
                     while (line != null) {
                         data.append(line).append("\n");
                         line = br.readLine();
                     }
 
                     tv.setText(data.toString());
+
+                    // closing both BufferedReader & FileReader
                     br.close();
                     reader.close();
                 } catch (Exception e) {
@@ -108,8 +116,9 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    //check for permission
+    // TODO : check for permission
     private boolean checkPermission() {
+
         int permissionCheck_Write = ContextCompat.checkSelfPermission(
                 MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
         int permissionCheck_Read = ContextCompat.checkSelfPermission(
