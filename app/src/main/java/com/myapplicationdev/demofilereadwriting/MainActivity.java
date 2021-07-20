@@ -2,7 +2,6 @@ package com.myapplicationdev.demofilereadwriting;
 
 import android.Manifest;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
@@ -10,18 +9,17 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.PermissionChecker;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
     Button btnWrite, btnRead;
-    TextView tv;
+    TextView statusTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,111 +28,92 @@ public class MainActivity extends AppCompatActivity {
 
         btnWrite = findViewById(R.id.btnWrite);
         btnRead = findViewById(R.id.btnRead);
-        tv = findViewById(R.id.tv);
-        checkPermission();
+        statusTextView = findViewById(R.id.tvStatus);
 
-        // TODO: Folder creation
-        String folderLocation = Environment.getExternalStorageDirectory()
-                .getAbsolutePath() + "/Folder"; // Location of the folder
+        // TODO: Folders creation
+        /* --- Internal app directory path --- */
+        String folderLocation = getFilesDir().getAbsolutePath() + "/MyFolder";
 
-        // by converting the given pathname string into an abstract pathname,
-        // a new File object is created.
+        /* --- External app directory path --- */
+        // This does not mean external as in SD Card, but rather outside of the sandboxed internal app storage.
+        //String folderLocation = Environment.getExternalStorageDirectory().getAbsolutePath() + "/MyFolder2";
+
+        String[] permission = new String[]{
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE};
+        ActivityCompat.requestPermissions(MainActivity.this, permission, 0);
+
+        // A new File object is created by converting the given pathname string into an abstract pathname.
         File folder = new File(folderLocation);
+        File textFile = new File(folderLocation, "data.txt");
 
         // checks to see if the file/directory specified by this abstract pathname exists.
         if (!folder.exists()) {
             boolean result = folder.mkdir(); // This function creates the directory specified by the abstract pathname.
 
             if (result) {
-                Log.d("File Read/Write", "Folder created");
+                Log.d("File read/write", "Folder Created");
+            } else {
+                Toast.makeText(this, "The creation of a folder was unsuccessful.", Toast.LENGTH_SHORT).show();
             }
-
         }
 
 
-        btnWrite.setOnClickListener(v -> {
-            checkPermission();
+        btnWrite.setOnClickListener(view -> {
 
-            // TODO: File creation and writing
             try {
-                String folderLocation1 = Environment.getExternalStorageDirectory()
-                        .getAbsolutePath() + "/Folder";
-                // A new File instance is created by combining a parent pathname string and a child pathname string.
-                File targetFile = new File(folderLocation1, "data.txt");
-                FileWriter writer = new FileWriter(targetFile, true);
-                /* true – for appending to  existing data
-                 false – for overwriting  existing data */
+                //  a character file writing object
+                FileWriter writer = new FileWriter(textFile, true);
 
+                // Static factory for obtaining a UUID of type 4 (pseudo-randomly generated).
+                UUID myRandomUUID = UUID.randomUUID();
 
-                writer.write("Hello world" + "\n"); // Writes a string.
+                writer.write("Test Data: " + myRandomUUID + "\n"); // Writes a string.
                 writer.flush(); // Flushes the stream.
                 writer.close();// Closes the stream by first flushing it.
+
             } catch (Exception e) {
-                Toast.makeText(MainActivity.this, "Failed to write!", Toast.LENGTH_LONG).show();
-                e.printStackTrace(); // This throwable and its backtrace are printed to the standard error stream.
+                Toast.makeText(this, "Failed to read the file", Toast.LENGTH_SHORT).show();
+
+                // This throwable and its backtrace are printed to the standard error stream.
+                e.printStackTrace();
             }
-
-
         });
-        btnRead.setOnClickListener(v -> {
-            checkPermission();
-            String folderLocation12 = Environment.getExternalStorageDirectory()
-                    .getAbsolutePath() + "/Folder";
-            File targetFile = new File(folderLocation12, "data.txt");
 
-            // Tests whether the targetFile denoted by this abstract pathname exists.
-            if (targetFile.exists()) {
+        btnRead.setOnClickListener(view -> {
 
+            // determines whether the file or directory denoted by this abstract pathname exists.
+            if (textFile.exists()) {
+
+                // A mutable character sequence object.
                 StringBuilder data = new StringBuilder();
-
                 try {
-                    // Creates a new FileReader, given the File to read from.
-                    FileReader reader = new FileReader(targetFile);
-                    BufferedReader br = new BufferedReader(reader);
-                    String line = br.readLine();
+                    FileReader reader = new FileReader(textFile); //  a character file writing object
 
-                    // if line is not null
+                    // a text-reading object that buffers characters for
+                    // efficient reading of characters/arrays/lines from a character-input stream.
+                    BufferedReader bufferedReader = new BufferedReader(reader);
+
+                    // A BufferedReader object that reads a single line of text.
+                    String line = bufferedReader.readLine();
+
                     while (line != null) {
                         data.append(line).append("\n");
-                        line = br.readLine();
+                        line = bufferedReader.readLine();
                     }
 
-                    tv.setText(data.toString());
-
-                    // closing both BufferedReader & FileReader
-                    br.close();
+                    // Closes the stream and releases any associated system resources
+                    bufferedReader.close();
                     reader.close();
-                } catch (Exception e) {
 
-                    Toast.makeText(MainActivity.this, "Failed to read!", Toast.LENGTH_LONG).show();
+                } catch (Exception e) {
+                    Toast.makeText(this, "Failed to read the file", Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
-                Log.d("Content", data.toString());
-            }
 
+                statusTextView.setText(data.toString());
+            }
         });
 
     }
-
-    // TODO : check for permission
-    private boolean checkPermission() {
-
-        int permissionCheck_Write = ContextCompat.checkSelfPermission(
-                MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        int permissionCheck_Read = ContextCompat.checkSelfPermission(
-                MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE);
-
-        if (permissionCheck_Write == PermissionChecker.PERMISSION_GRANTED
-                && permissionCheck_Read == PermissionChecker.PERMISSION_GRANTED) {
-            return true;
-
-        } else {
-            ActivityCompat.requestPermissions(MainActivity.this,
-                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                            Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
-            return false;
-
-        }
-    }
-
 }
